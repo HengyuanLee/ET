@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ET
+namespace ET.ExcelTool
 {
     public static partial class ExcelExporterCustom
     {
@@ -16,7 +16,7 @@ namespace ET
         static void ExportExcelJson(ExcelPackage p, string name, Table table, ConfigType configType, string relativeDir)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("{\"dict\": [\n");
+            sb.Append("{\n\t\"dict\": [\n");
             foreach (ExcelWorksheet worksheet in p.Workbook.Worksheets)
             {
                 if (worksheet.Name.StartsWith("#"))
@@ -27,7 +27,7 @@ namespace ET
                 ExportSheetJson(worksheet, name, table.HeadInfos, configType, sb);
             }
 
-            sb.Append("]}\n");
+            sb.Append("\t]\n}\n");
 
             string dir = string.Format(jsonDir, configType.ToString(), relativeDir);
             if (!Directory.Exists(dir))
@@ -45,30 +45,20 @@ namespace ET
                 Dictionary<string, HeadInfo> classField, ConfigType configType, StringBuilder sb)
         {
             string configTypeStr = configType.ToString();
-            for (int row = 6; row <= worksheet.Dimension.End.Row; ++row)
+            for (int row = 5; row <= worksheet.Dimension.End.Row; ++row)
             {
-                string prefix = worksheet.Cells[row, 2].Text.Trim();
-                if (prefix.Contains("#"))
+
+                if (configType != ConfigType.cs)
                 {
                     continue;
                 }
 
-                if (prefix == "")
-                {
-                    prefix = "cs";
-                }
-
-                if (configType != ConfigType.cs && !prefix.Contains(configTypeStr))
+                if (worksheet.Cells[row, 1].Text.Trim() == "")
                 {
                     continue;
                 }
 
-                if (worksheet.Cells[row, 3].Text.Trim() == "")
-                {
-                    continue;
-                }
-
-                sb.Append($"[{worksheet.Cells[row, 3].Text.Trim()}, {{\"_t\":\"{name}\"");
+                sb.Append($"\t\t[{worksheet.Cells[row, 1].Text.Trim()}, {{\"_t\":\"{name}\"");
                 for (int col = 3; col <= worksheet.Dimension.End.Column; ++col)
                 {
                     string fieldName = worksheet.Cells[4, col].Text.Trim();
@@ -90,7 +80,7 @@ namespace ET
                     }
 
                     string fieldN = headInfo.FieldName;
-                    if (fieldN == "Id")
+                    if (fieldN.ToLower() == "id")
                     {
                         fieldN = "_id";
                     }
@@ -132,8 +122,41 @@ namespace ET
                     value = value.Replace("\"", "\\\"");
                     return $"\"{value}\"";
                 default:
+                    if (type.StartsWith("Directory"))
+                    {
+                        return GetDictValue(type, value);
+                    }
                     throw new Exception($"不支持此类型: {type}");
             }
+        }
+        private static string GetDictValue(string type, string value)
+        {
+            string valueType = type.Replace("Directory<", string.Empty).Replace(">", string.Empty).Split(",")[1].Trim();
+
+            string result = "";
+            string[] kvStrs = value.Split(",");
+            foreach (string kvStr in kvStrs)
+            {
+                string[] kvs = default;
+                if (kvStr.Contains("="))
+                {
+                    kvs = kvStr.Split("=");
+                }else if (kvStr.Contains(":"))
+                {
+                    kvs = kvStr.Split(":");
+                }
+                if (kvs.Length > 0)
+                {
+                    foreach (string kv in kvs)
+                    {
+                        string _key = kvs[0].Trim();
+                        string _value = kvs[1].Trim();
+                        result += $",\"{_key}\":{Convert(valueType, _value)},";
+                    }
+                }
+            }
+            result = result.Remove(result.Length - 1);
+            return result;
         }
 
         #endregion

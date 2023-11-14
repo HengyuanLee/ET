@@ -14,8 +14,52 @@ using MongoDB.Bson.Serialization.Attributes;
 using OfficeOpenXml;
 using LicenseContext = OfficeOpenXml.LicenseContext;
 
-namespace ET
+namespace ET.ExcelTool
 {
+    public enum ConfigType
+    {
+        c = 0,
+        s = 1,
+        cs = 2,
+    }
+
+    class HeadInfo
+    {
+        public string FieldDesc;
+        public string FieldName;
+        public string FieldType;
+        public int FieldIndex;
+        public Dictionary<string, string> FieldConfigs;
+
+        public string FieldCS
+        {
+            get {
+                if (FieldConfigs.TryGetValue("cs", out string cs))
+                {
+                    return cs;
+                }
+                return "cs";
+            }
+        }
+
+        public HeadInfo(string desc, string name, string type, int index, Dictionary<string, string> fieldConfigs)
+        {
+            this.FieldDesc = desc;
+            this.FieldName = name;
+            this.FieldType = type;
+            this.FieldIndex = index;
+            this.FieldConfigs = fieldConfigs;
+        }
+    }
+
+    // 这里加个标签是为了防止编译时裁剪掉protobuf，因为整个tool工程没有用到protobuf，编译会去掉引用，然后动态编译就会出错
+    class Table
+    {
+        public bool C;
+        public bool S;
+        public int Index;
+        public Dictionary<string, HeadInfo> HeadInfos = new Dictionary<string, HeadInfo>();
+    }
     public static partial class ExcelExporterCustom
     {
         private static string template;
@@ -146,7 +190,7 @@ namespace ET
 
                 foreach (string path in excels)
                 {
-                    ExportExcel(path);
+                    ExportExcelToJson(path);
                 }
 
                 if (Directory.Exists(clientProtoDir))
@@ -173,7 +217,7 @@ namespace ET
             }
         }
 
-        private static void ExportExcel(string path)
+        private static void ExportExcelToJson(string path)
         {
             string dir = Path.GetDirectoryName(path);
             string relativePath = Path.GetRelativePath(excelDir, dir);

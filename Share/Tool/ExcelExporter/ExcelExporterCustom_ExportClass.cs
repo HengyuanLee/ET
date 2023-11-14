@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ET
+namespace ET.ExcelTool
 {
     public static partial class ExcelExporterCustom
     {
@@ -16,22 +16,22 @@ namespace ET
         {
             foreach (ExcelWorksheet worksheet in p.Workbook.Worksheets)
             {
+                if (worksheet.Name.StartsWith("#"))
+                {
+                    continue;
+                }
                 ExportSheetClass(worksheet, table);
             }
         }
 
         static void ExportSheetClass(ExcelWorksheet worksheet, Table table)
         {
-            const int row = 2;
-            for (int col = 3; col <= worksheet.Dimension.End.Column; ++col)
+            const int row = 0;
+            for (int col = 1; col <= worksheet.Dimension.End.Column; ++col)
             {
-                if (worksheet.Name.StartsWith("#"))
-                {
-                    continue;
-                }
-
-                string fieldName = worksheet.Cells[row + 2, col].Text.Trim();
-                if (fieldName == "")
+                //行1：字段名称
+                string fieldName = worksheet.Cells[row + 1, col].Text.Trim();
+                if (fieldName == "" || fieldName.StartsWith("#"))
                 {
                     continue;
                 }
@@ -41,32 +41,26 @@ namespace ET
                     continue;
                 }
 
-                string fieldCS = worksheet.Cells[row, col].Text.Trim().ToLower();
-                if (fieldCS.Contains("#"))
+                //行3：自定义配置
+                Dictionary<string, string> configs = new Dictionary<string, string>();
+                string configStr = worksheet.Cells[row + 3, col].Text.Trim();
+                string[] configStrKVs = configStr.Split(',');
+                foreach (string kvStr in configStrKVs)
                 {
-                    table.HeadInfos[fieldName] = null;
-                    continue;
-                }
-
-                if (fieldCS == "")
-                {
-                    fieldCS = "cs";
-                }
-
-                if (table.HeadInfos.TryGetValue(fieldName, out var oldClassField))
-                {
-                    if (oldClassField.FieldCS != fieldCS)
+                    string[] kv = kvStr.Split(":");
+                    if (kv.Length >= 2)
                     {
-                        Log.Console($"field cs not same: {worksheet.Name} {fieldName} oldcs: {oldClassField.FieldCS} {fieldCS}");
+                        string key = kv[0].Trim();
+                        string value = kv[1].Trim();
+                        configs.Add(key, value);
                     }
-
-                    continue;
                 }
+                //行2：字段类型
+                string fieldType = worksheet.Cells[row + 2, col].Text.Trim();
+                //行4：字段描述
+                string fieldDesc = worksheet.Cells[row + 4, col].Text.Trim();
 
-                string fieldDesc = worksheet.Cells[row + 1, col].Text.Trim();
-                string fieldType = worksheet.Cells[row + 3, col].Text.Trim();
-
-                table.HeadInfos[fieldName] = new HeadInfo(fieldCS, fieldDesc, fieldName, fieldType, ++table.Index);
+                table.HeadInfos[fieldName] = new HeadInfo(fieldDesc, fieldName, fieldType, ++table.Index, configs);
             }
         }
 
