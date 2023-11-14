@@ -70,7 +70,7 @@ namespace ET.ExcelTool
 
         private const string CSClassDir = "../Unity/Assets/Scripts/Model/Generate/ClientServer/Config";
 
-        private const string excelDir = "../Unity/Assets/Config/Excel/";
+        private const string excelDir = "../Unity/Assets/Config/ExcelCustom/";
 
         private const string jsonDir = "../Config/Json/{0}/{1}";
 
@@ -122,6 +122,7 @@ namespace ET.ExcelTool
                 }
 
                 List<string> files = FileHelper.GetAllFiles(excelDir);
+                Log.Console("Custom export found excels count : "+files.Count);
                 foreach (string path in files)
                 {
                     string fileName = Path.GetFileName(path);
@@ -341,7 +342,7 @@ namespace ET.ExcelTool
                     stringBuilder.Append($"{t.GetMessage()}\n");
                 }
 
-                throw new Exception($"动态编译失败:\n{stringBuilder}");
+                throw new Exception($"dynamical build failed, 动态编译失败:\n{stringBuilder}");
             }
 
             memSteam.Seek(0, SeekOrigin.Begin);

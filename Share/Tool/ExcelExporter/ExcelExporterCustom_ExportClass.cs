@@ -26,6 +26,7 @@ namespace ET.ExcelTool
 
         static void ExportSheetClass(ExcelWorksheet worksheet, Table table)
         {
+            if(worksheet.Dimension == null || worksheet.Dimension.End == null) { return; }
             const int row = 0;
             for (int col = 1; col <= worksheet.Dimension.End.Column; ++col)
             {
