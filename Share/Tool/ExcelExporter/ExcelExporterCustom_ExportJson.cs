@@ -16,7 +16,7 @@ namespace ET.ExcelTool
         static void ExportExcelJson(ExcelPackage p, string name, Table table, ConfigType configType, string relativeDir)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("{\n\t\"dict\": [\n");
+            sb.Append($"{{{Environment.NewLine}\t\"dict\": [{Environment.NewLine}");
             foreach (ExcelWorksheet worksheet in p.Workbook.Worksheets)
             {
                 if (worksheet.Name.StartsWith("#"))
@@ -27,7 +27,7 @@ namespace ET.ExcelTool
                 ExportSheetJson(worksheet, name, table.HeadInfos, configType, sb);
             }
 
-            sb.Append("\t]\n}\n");
+            sb.Append($"\t]{Environment.NewLine}}}{Environment.NewLine}");
 
             string dir = string.Format(jsonDir, configType.ToString(), relativeDir);
             if (!Directory.Exists(dir))
@@ -44,6 +44,7 @@ namespace ET.ExcelTool
         static void ExportSheetJson(ExcelWorksheet worksheet, string name,
                 Dictionary<string, HeadInfo> classField, ConfigType configType, StringBuilder sb)
         {
+            if (worksheet == null || worksheet.Dimension == null || worksheet.Dimension.End == null) return;
             string configTypeStr = configType.ToString();
             for (int row = 5; row <= worksheet.Dimension.End.Row; ++row)
             {
@@ -88,7 +89,7 @@ namespace ET.ExcelTool
                     sb.Append($",\"{fieldN}\":{Convert(headInfo.FieldType, worksheet.Cells[row, col].Text.Trim())}");
                 }
 
-                sb.Append("}],\n");
+                sb.Append("}],{Environment.NewLine}");
             }
         }
 
@@ -122,7 +123,7 @@ namespace ET.ExcelTool
                     value = value.Replace("\"", "\\\"");
                     return $"\"{value}\"";
                 default:
-                    if (type.StartsWith("Directory"))
+                    if (type.StartsWith("Dictionary"))
                     {
                         return GetDictValue(type, value);
                     }
@@ -131,7 +132,7 @@ namespace ET.ExcelTool
         }
         private static string GetDictValue(string type, string value)
         {
-            string valueType = type.Replace("Directory<", string.Empty).Replace(">", string.Empty).Split(",")[1].Trim();
+            string valueType = type.Replace("Dictionary<", string.Empty).Replace(">", string.Empty).Split(",")[1].Trim();
 
             string result = "";
             string[] kvStrs = value.Split(",");
@@ -141,7 +142,8 @@ namespace ET.ExcelTool
                 if (kvStr.Contains("="))
                 {
                     kvs = kvStr.Split("=");
-                }else if (kvStr.Contains(":"))
+                }
+                else if (kvStr.Contains(":"))
                 {
                     kvs = kvStr.Split(":");
                 }
@@ -151,7 +153,7 @@ namespace ET.ExcelTool
                     {
                         string _key = kvs[0].Trim();
                         string _value = kvs[1].Trim();
-                        result += $",\"{_key}\":{Convert(valueType, _value)},";
+                        result += $",\"{_key}\":{Convert(valueType, _value)},{Environment.NewLine}";
                     }
                 }
             }

@@ -33,7 +33,8 @@ namespace ET.ExcelTool
 
         public string FieldCS
         {
-            get {
+            get
+            {
                 if (FieldConfigs.TryGetValue("cs", out string cs))
                 {
                     return cs;
@@ -64,11 +65,11 @@ namespace ET.ExcelTool
     {
         private static string template;
 
-        private const string ClientClassDir = "../Unity/Assets/Scripts/Model/Generate/Client/Config";
+        private const string ClientClassDir = "../Unity/Assets/Scripts/Model/GenerateCustom/Client/Config";
         // 服务端因为机器人的存在必须包含客户端所有配置，所以单独的c字段没有意义,单独的c就表示cs
-        private const string ServerClassDir = "../Unity/Assets/Scripts/Model/Generate/Server/Config";
+        private const string ServerClassDir = "../Unity/Assets/Scripts/Model/GenerateCustom/Server/Config";
 
-        private const string CSClassDir = "../Unity/Assets/Scripts/Model/Generate/ClientServer/Config";
+        private const string CSClassDir = "../Unity/Assets/Scripts/Model/GenerateCustom/ClientServer/Config";
 
         private const string excelDir = "../Unity/Assets/Config/ExcelCustom/";
 
@@ -122,7 +123,6 @@ namespace ET.ExcelTool
                 }
 
                 List<string> files = FileHelper.GetAllFiles(excelDir);
-                Log.Console("Custom export found excels count : "+files.Count);
                 foreach (string path in files)
                 {
                     string fileName = Path.GetFileName(path);

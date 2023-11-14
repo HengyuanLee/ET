@@ -26,12 +26,14 @@ namespace ET.ExcelTool
 
         static void ExportSheetClass(ExcelWorksheet worksheet, Table table)
         {
-            if(worksheet.Dimension == null || worksheet.Dimension.End == null) { return; }
+            if (worksheet.Dimension == null || worksheet.Dimension.End == null) { return; }
             const int row = 0;
             for (int col = 1; col <= worksheet.Dimension.End.Column; ++col)
             {
                 //行1：字段名称
                 string fieldName = worksheet.Cells[row + 1, col].Text.Trim();
+                //首字母大写
+                fieldName = fieldName.First().ToString().ToUpper() + fieldName.Substring(1);
                 if (fieldName == "" || fieldName.StartsWith("#"))
                 {
                     continue;
@@ -74,7 +76,7 @@ namespace ET.ExcelTool
             }
 
             string exportPath = Path.Combine(dir, $"{protoName}.cs");
-
+            Log.Console($"create cs file ：{exportPath}");
             using FileStream txt = new FileStream(exportPath, FileMode.Create);
             using StreamWriter sw = new StreamWriter(txt);
 
@@ -91,9 +93,9 @@ namespace ET.ExcelTool
                     continue;
                 }
 
-                sb.Append($"\t\t/// <summary>{headInfo.FieldDesc}</summary>\n");
+                sb.Append($"\t\t/// <summary>{headInfo.FieldDesc}</summary>{Environment.NewLine}");
                 string fieldType = headInfo.FieldType;
-                sb.Append($"\t\tpublic {fieldType} {headInfo.FieldName} {{ get; set; }}\n");
+                sb.Append($"\t\tpublic {fieldType} {headInfo.FieldName} {{ get; set; }}{Environment.NewLine}");
             }
 
             string content = template.Replace("(ConfigName)", protoName).Replace(("(Fields)"), sb.ToString());
