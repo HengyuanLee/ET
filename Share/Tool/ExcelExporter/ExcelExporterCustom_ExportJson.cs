@@ -59,10 +59,11 @@ namespace ET.ExcelTool
                     continue;
                 }
 
-                sb.Append($"\t\t[{worksheet.Cells[row, 1].Text.Trim()}, {{\"_t\":\"{name}\"");
-                for (int col = 3; col <= worksheet.Dimension.End.Column; ++col)
+                sb.Append($"\t\t[{worksheet.Cells[row, 1].Text.Trim()}, {{\"_t\":\"{name}\"{Environment.NewLine}");
+                for (int col = 1; col <= worksheet.Dimension.End.Column; ++col)
                 {
-                    string fieldName = worksheet.Cells[4, col].Text.Trim();
+                    string fieldName = worksheet.Cells[1, col].Text.Trim();
+                    fieldName = fieldName.First().ToString().ToUpper() + fieldName.Substring(1);
                     if (!classField.ContainsKey(fieldName))
                     {
                         continue;
@@ -86,10 +87,10 @@ namespace ET.ExcelTool
                         fieldN = "_id";
                     }
 
-                    sb.Append($",\"{fieldN}\":{Convert(headInfo.FieldType, worksheet.Cells[row, col].Text.Trim())}");
+                    sb.Append($",\"{fieldN}\":{Convert(headInfo.FieldType, worksheet.Cells[row, col].Text.Trim())}{Environment.NewLine}");
                 }
 
-                sb.Append("}],{Environment.NewLine}");
+                sb.Append($"}}],{Environment.NewLine}");
             }
         }
 
@@ -153,7 +154,7 @@ namespace ET.ExcelTool
                     {
                         string _key = kvs[0].Trim();
                         string _value = kvs[1].Trim();
-                        result += $",\"{_key}\":{Convert(valueType, _value)},{Environment.NewLine}";
+                        result += $",\"{_key}\":{Convert(valueType, _value)}{Environment.NewLine}";
                     }
                 }
             }
