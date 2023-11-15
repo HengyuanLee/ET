@@ -76,7 +76,7 @@ namespace ET.ExcelTool
             }
 
             string exportPath = Path.Combine(dir, $"{protoName}.cs");
-            Log.Console($"create cs file ：{exportPath}");
+            Log.Console($"Create c# file ：{exportPath}");
             using FileStream txt = new FileStream(exportPath, FileMode.Create);
             using StreamWriter sw = new StreamWriter(txt);
 
@@ -93,13 +93,26 @@ namespace ET.ExcelTool
                     continue;
                 }
 
-                sb.Append($"\t\t/// <summary>{headInfo.FieldDesc}</summary>{Environment.NewLine}");
                 string fieldType = headInfo.FieldType;
+                bool needDictAttri = false;
+                if (fieldType.StartsWith("Dictionary"))
+                {
+                    string[] kv = fieldType.Replace("Dictionary<", string.Empty).Replace(">", string.Empty).Split(",");
+                    if (kv.Length > 0)
+                    {
+                        needDictAttri = !kv[0].Trim().Equals("string"); 
+                    }
+                }
+                sb.Append($"\t\t/// <summary>{headInfo.FieldDesc}</summary>{Environment.NewLine}");
+                //字典以非string为key时，Bson需要加标注。
+                if (needDictAttri) sb.Append($"\t\t[BsonDictionaryOptions(DictionaryRepresentation.ArrayOfArrays)]{Environment.NewLine}");
                 sb.Append($"\t\tpublic {fieldType} {headInfo.FieldName} {{ get; set; }}{Environment.NewLine}");
             }
 
             string content = template.Replace("(ConfigName)", protoName).Replace(("(Fields)"), sb.ToString());
             sw.Write(content);
+            sw.Dispose();
+            sw.Close();
         }
 
         #endregion

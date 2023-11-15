@@ -16,7 +16,7 @@ namespace ET.ExcelTool
         static void ExportExcelJson(ExcelPackage p, string name, Table table, ConfigType configType, string relativeDir)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append($"{{{Environment.NewLine}\t\"dict\": [{Environment.NewLine}");
+            sb.Append($"{{{Environment.NewLine}");
             foreach (ExcelWorksheet worksheet in p.Workbook.Worksheets)
             {
                 if (worksheet.Name.StartsWith("#"))
@@ -27,7 +27,7 @@ namespace ET.ExcelTool
                 ExportSheetJson(worksheet, name, table.HeadInfos, configType, sb);
             }
 
-            sb.Append($"\t]{Environment.NewLine}}}{Environment.NewLine}");
+            sb.Append($"}}");
 
             string dir = string.Format(jsonDir, configType.ToString(), relativeDir);
             if (!Directory.Exists(dir))
@@ -39,27 +39,27 @@ namespace ET.ExcelTool
             using FileStream txt = new FileStream(jsonPath, FileMode.Create);
             using StreamWriter sw = new StreamWriter(txt);
             sw.Write(sb.ToString());
+            sw.Dispose();
+            sw.Close();
+            Log.Console($"Create json file : {jsonPath}");
         }
 
         static void ExportSheetJson(ExcelWorksheet worksheet, string name,
                 Dictionary<string, HeadInfo> classField, ConfigType configType, StringBuilder sb)
         {
             if (worksheet == null || worksheet.Dimension == null || worksheet.Dimension.End == null) return;
+
+            string endStr = $",{Environment.NewLine}";
+
             string configTypeStr = configType.ToString();
             for (int row = 5; row <= worksheet.Dimension.End.Row; ++row)
             {
-
-                if (configType != ConfigType.cs)
+                string idValue = worksheet.Cells[row, 1].Text.Trim();
+                if (idValue == "")
                 {
                     continue;
                 }
-
-                if (worksheet.Cells[row, 1].Text.Trim() == "")
-                {
-                    continue;
-                }
-
-                sb.Append($"\t\t[{worksheet.Cells[row, 1].Text.Trim()}, {{\"_t\":\"{name}\"{Environment.NewLine}");
+                sb.Append($"{Tab(1)}\"{idValue}\": {{{Environment.NewLine}{Tab(2)}\"_t\":\"{name}\",{Environment.NewLine}");
                 for (int col = 1; col <= worksheet.Dimension.End.Column; ++col)
                 {
                     string fieldName = worksheet.Cells[1, col].Text.Trim();
@@ -87,11 +87,21 @@ namespace ET.ExcelTool
                         fieldN = "_id";
                     }
 
-                    sb.Append($",\"{fieldN}\":{Convert(headInfo.FieldType, worksheet.Cells[row, col].Text.Trim())}{Environment.NewLine}");
+                    sb.Append($"{Tab(2)}\"{fieldN}\":{Convert(headInfo.FieldType, worksheet.Cells[row, col].Text.Trim())},{Environment.NewLine}");
                 }
-
-                sb.Append($"}}],{Environment.NewLine}");
+                sb.Replace(endStr, Environment.NewLine, sb.Length - endStr.Length, endStr.Length);
+                sb.Append($"{Tab(1)}}},{Environment.NewLine}");
             }
+            sb.Replace(endStr, Environment.NewLine, sb.Length-endStr.Length, endStr.Length);
+        }
+        private static string Tab(int num = 1)
+        {
+            string result = "";
+            for (int i = 0; i < num; i++)
+            {
+                result += "\t";
+            }
+            return result;
         }
 
         private static string Convert(string type, string value)
@@ -148,17 +158,16 @@ namespace ET.ExcelTool
                 {
                     kvs = kvStr.Split(":");
                 }
-                if (kvs.Length > 0)
+                if (kvs.Length >= 2)
                 {
-                    foreach (string kv in kvs)
-                    {
-                        string _key = kvs[0].Trim();
-                        string _value = kvs[1].Trim();
-                        result += $",\"{_key}\":{Convert(valueType, _value)}{Environment.NewLine}";
-                    }
+                    string _key = kvs[0].Trim();
+                    string _value = kvs[1].Trim();
+                    result += $"{Tab(3)}\"{_key}\":{Convert(valueType, _value)},{Environment.NewLine}";
                 }
             }
-            result = result.Remove(result.Length - 1);
+            result = $"{Environment.NewLine}{result.Remove(result.Length - 1 - Environment.NewLine.Length)}";
+            result = $"{Environment.NewLine}{Tab(2)}{{{result}";
+            result = $"{result}{Environment.NewLine}{Tab(2)}}}";
             return result;
         }
 

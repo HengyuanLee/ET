@@ -65,11 +65,11 @@ namespace ET.ExcelTool
     {
         private static string template;
 
-        private const string ClientClassDir = "../Unity/Assets/Scripts/Model/GenerateCustom/Client/Config";
+        private const string ClientClassDir = "../Unity/Assets/Scripts/Model/Generate/Client/Config";
         // 服务端因为机器人的存在必须包含客户端所有配置，所以单独的c字段没有意义,单独的c就表示cs
-        private const string ServerClassDir = "../Unity/Assets/Scripts/Model/GenerateCustom/Server/Config";
+        private const string ServerClassDir = "../Unity/Assets/Scripts/Model/Generate/Server/Config";
 
-        private const string CSClassDir = "../Unity/Assets/Scripts/Model/GenerateCustom/ClientServer/Config";
+        private const string CSClassDir = "../Unity/Assets/Scripts/Model/Generate/ClientServer/Config";
 
         private const string excelDir = "../Unity/Assets/Config/ExcelCustom/";
 
@@ -376,6 +376,7 @@ namespace ET.ExcelTool
             foreach (string jsonPath in jsonPaths)
             {
                 string json = File.ReadAllText(jsonPath);
+                json = $"{{\"dict\":{json}}}";
                 try
                 {
                     object deserialize = BsonSerializer.Deserialize(json, type);
@@ -391,6 +392,9 @@ namespace ET.ExcelTool
 
             using FileStream file = File.Create(path);
             file.Write(final.ToBson());
+            file.Close();
+
+            Log.Console($"Create bytes file : {path}");
         }
     }
 }
