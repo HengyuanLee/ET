@@ -50,6 +50,18 @@ namespace ET.ExcelTool
             this.FieldType = type;
             this.FieldIndex = index;
             this.FieldConfigs = fieldConfigs;
+            FieldType = FieldType.Trim();
+            if (FieldType.StartsWith("<") && FieldType.EndsWith(">"))
+            {
+                if (FieldType.Contains(","))
+                {
+                    FieldType = $"Dictionary{FieldType}";
+                }
+                else
+                {
+                    FieldType = $"{FieldType.TrimStart('<').TrimEnd('>')}[]";
+                }
+            }
         }
     }
 
