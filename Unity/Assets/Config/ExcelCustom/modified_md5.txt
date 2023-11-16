@@ -1,0 +1,2 @@
+﻿../Unity/Assets/Config/ExcelCustom/Character.xlsx|41-36-E6-88-F3-F4-14-20-D7-42-D8-91-E1-31-BC-11
+../Unity/Assets/Config/ExcelCustom/Weapon.xlsx|9C-38-C6-32-C9-C0-31-24-9C-F8-F3-ED-D5-01-FA-78
