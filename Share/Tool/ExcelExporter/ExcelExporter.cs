@@ -50,7 +50,7 @@ namespace ET
         public int Index;
         public Dictionary<string, HeadInfo> HeadInfos = new Dictionary<string, HeadInfo>();
     }
-    
+
     public static class ExcelExporter
     {
         private static string template;
@@ -103,31 +103,16 @@ namespace ET
                 template = File.ReadAllText("Template.txt");
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-                if (Directory.Exists(ClientClassDir))
-                {
-                    Directory.Delete(ClientClassDir, true);
-                }
-
-                if (Directory.Exists(ServerClassDir))
-                {
-                    Directory.Delete(ServerClassDir, true);
-                }
-
-                if (Directory.Exists(CSClassDir))
-                {
-                    Directory.Delete(CSClassDir, true);
-                }
-
                 string jsonProtoDirParent = jsonDir.Replace(replaceStr, string.Empty);
                 if (Directory.Exists(jsonProtoDirParent))
                 {
-                    Directory.Delete(jsonProtoDirParent, true);
+                    //Directory.Delete(jsonProtoDirParent, true);
                 }
 
                 string serverProtoDirParent = serverProtoDir.Replace(replaceStr, string.Empty);
                 if (Directory.Exists(serverProtoDirParent))
                 {
-                    Directory.Delete(serverProtoDirParent, true);
+                    //Directory.Delete(serverProtoDirParent, true);
                 }
 
                 List<string> files = FileHelper.GetAllFiles(excelDir);
@@ -191,23 +176,23 @@ namespace ET
                 }
 
                 // 动态编译生成的配置代码
-                configAssemblies[(int) ConfigType.c] = DynamicBuild(ConfigType.c);
-                configAssemblies[(int) ConfigType.s] = DynamicBuild(ConfigType.s);
-                configAssemblies[(int) ConfigType.cs] = DynamicBuild(ConfigType.cs);
+                configAssemblies[(int)ConfigType.c] = DynamicBuild(ConfigType.c);
+                configAssemblies[(int)ConfigType.s] = DynamicBuild(ConfigType.s);
+                configAssemblies[(int)ConfigType.cs] = DynamicBuild(ConfigType.cs);
 
                 List<string> excels = FileHelper.GetAllFiles(excelDir, "*.xlsx");
-                
+
                 foreach (string path in excels)
                 {
                     ExportExcel(path);
                 }
-                
+
                 if (Directory.Exists(clientProtoDir))
                 {
                     Directory.Delete(clientProtoDir, true);
                 }
                 FileHelper.CopyDirectory("../Config/Excel/c", clientProtoDir);
-                
+
                 Log.Console("Export Excel Sucess!");
             }
             catch (Exception e)
@@ -245,7 +230,7 @@ namespace ET
                 fileNameWithoutCS = ss[0];
                 cs = ss[1];
             }
-            
+
             if (cs == "")
             {
                 cs = "cs";
@@ -283,7 +268,7 @@ namespace ET
 
         private static Assembly GetAssembly(ConfigType configType)
         {
-            return configAssemblies[(int) configType];
+            return configAssemblies[(int)configType];
         }
 
         private static string GetClassDir(ConfigType configType)
@@ -295,7 +280,7 @@ namespace ET
                 _ => CSClassDir
             };
         }
-        
+
         // 动态编译生成的cs代码
         private static Assembly DynamicBuild(ConfigType configType)
         {
@@ -397,7 +382,7 @@ namespace ET
                     table.HeadInfos[fieldName] = null;
                     continue;
                 }
-                
+
                 if (fieldCS == "")
                 {
                     fieldCS = "cs";
@@ -488,7 +473,7 @@ namespace ET
             sw.Write(sb.ToString());
         }
 
-        static void ExportSheetJson(ExcelWorksheet worksheet, string name, 
+        static void ExportSheetJson(ExcelWorksheet worksheet, string name,
                 Dictionary<string, HeadInfo> classField, ConfigType configType, StringBuilder sb)
         {
             string configTypeStr = configType.ToString();
@@ -504,7 +489,7 @@ namespace ET
                 {
                     prefix = "cs";
                 }
-                
+
                 if (configType != ConfigType.cs && !prefix.Contains(configTypeStr))
                 {
                     continue;

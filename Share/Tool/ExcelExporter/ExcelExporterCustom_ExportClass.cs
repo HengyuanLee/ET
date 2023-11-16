@@ -76,7 +76,11 @@ namespace ET.ExcelTool
             }
 
             string exportPath = Path.Combine(dir, $"{protoName}.cs");
-            Log.Console($"Create c# file ：{exportPath}");
+            if (File.Exists(exportPath))
+            {
+                File.Delete(exportPath);
+            }
+            Log.Console($"Generate c# file ：{exportPath}");
             using FileStream txt = new FileStream(exportPath, FileMode.Create);
             using StreamWriter sw = new StreamWriter(txt);
 
@@ -100,7 +104,7 @@ namespace ET.ExcelTool
                     string[] kv = fieldType.Replace("Dictionary<", string.Empty).Replace(">", string.Empty).Split(",");
                     if (kv.Length > 0)
                     {
-                        needDictAttri = !kv[0].Trim().Equals("string"); 
+                        needDictAttri = !kv[0].Trim().Equals("string");
                     }
                 }
                 sb.Append($"\t\t/// <summary>{headInfo.FieldDesc}</summary>{Environment.NewLine}");

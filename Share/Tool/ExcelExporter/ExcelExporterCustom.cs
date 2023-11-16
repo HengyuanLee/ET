@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -124,17 +125,24 @@ namespace ET.ExcelTool
                 template = File.ReadAllText("Template.txt");
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-                if (Directory.Exists(ClientClassDir))
+                //读取已导出过的excel文件md5
+                Dictionary<string, string> fileMd5s = new Dictionary<string, string>();
+                string md5File = $"{excelDir}/modified_md5.txt";
+                if (File.Exists(md5File))
                 {
-                    Directory.Delete(ClientClassDir, true);
+                    string[] lines = File.ReadAllLines(md5File, Encoding.UTF8);
+                    foreach (string line in lines)
+                    {
+                        string[] kv = line.Split('|');
+                        fileMd5s[kv[0]] = kv[1];
+                    }
                 }
 
-                if (Directory.Exists(ServerClassDir))
-                {
-                    Directory.Delete(ServerClassDir, true);
-                }
+                List<string> existFiles = new List<string>();
 
+                //读取所有excel文件
                 List<string> files = FileHelper.GetAllFiles(excelDir);
+                List<string> modifiedFiles = new List<string>();
                 foreach (string path in files)
                 {
                     string fileName = Path.GetFileName(path);
@@ -142,7 +150,33 @@ namespace ET.ExcelTool
                     {
                         continue;
                     }
+                    existFiles.Add(path);
 
+                    var md5 = MD5.Create();
+                    var bs = File.ReadAllBytes(path);
+                    byte[] md5Bs = md5.ComputeHash(bs);
+                    string curMd5Str = BitConverter.ToString(md5Bs);
+                    fileMd5s.TryGetValue(path, out string oldMd5Str);
+                    if (curMd5Str == oldMd5Str) continue;//excel文件无改动
+                    //有改动，保存准备导出。
+                    fileMd5s[path] = curMd5Str;
+                    modifiedFiles.Add(path);
+                    Log.Console($"准备到处文件：{path}");
+                }
+                //更新本次更改到md5文件。
+                string newMd5Text = "";
+                foreach (var kv in fileMd5s)
+                {
+                    if (existFiles.Contains(kv.Key))
+                    {
+                        newMd5Text += $"{kv.Key}|{kv.Value}{Environment.NewLine}";
+                    }
+                }
+                File.WriteAllText(md5File, newMd5Text, Encoding.UTF8);
+
+                foreach (string path in modifiedFiles)
+                {
+                    string fileName = Path.GetFileName(path);
                     string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
                     string fileNameWithoutCS = fileNameWithoutExtension;
                     string cs = "cs";
@@ -199,9 +233,9 @@ namespace ET.ExcelTool
                 configAssemblies[(int)ConfigType.s] = DynamicBuild(ConfigType.s);
                 configAssemblies[(int)ConfigType.cs] = DynamicBuild(ConfigType.cs);
 
-                List<string> excels = FileHelper.GetAllFiles(excelDir, "*.xlsx");
+                //List<string> excels = FileHelper.GetAllFiles(excelDir, "*.xlsx");
 
-                foreach (string path in excels)
+                foreach (string path in modifiedFiles)
                 {
                     ExportExcelToJson(path);
                 }

@@ -22,7 +22,8 @@ namespace ET.ExcelTool
                 if (worksheet == null || worksheet.Dimension == null || worksheet.Dimension.End == null) continue;
                 if (worksheet.Name.ToLower() == "#alias")
                 {
-                    for (int row = 1; row <= worksheet.Dimension.End.Row; row++) {
+                    for (int row = 1; row <= worksheet.Dimension.End.Row; row++)
+                    {
                         string aliasName = worksheet.Cells[row, 1].Text.Trim();
                         string realName = worksheet.Cells[row, 2].Text.Trim();
                         Alias[aliasName] = realName;
@@ -51,12 +52,16 @@ namespace ET.ExcelTool
             }
 
             string jsonPath = Path.Combine(dir, $"{name}.txt");
+            if (File.Exists(jsonPath))
+            {
+                File.Delete(jsonPath);
+            }
             using FileStream txt = new FileStream(jsonPath, FileMode.Create);
             using StreamWriter sw = new StreamWriter(txt);
             sw.Write(sb.ToString());
             sw.Dispose();
             sw.Close();
-            Log.Console($"Create json file : {jsonPath}");
+            Log.Console($"Generate json file : {jsonPath}");
         }
 
         static void ExportSheetJson(ExcelWorksheet worksheet, string name,
@@ -105,12 +110,12 @@ namespace ET.ExcelTool
                     if (headInfo.FieldConfigs.TryGetValue("alias", out string aliasBool))
                     {
                     }
-                    sb.Append($"{Tab(2)}\"{fieldN}\":{Convert(headInfo.FieldType, value, aliasBool=="true")},{Environment.NewLine}");
+                    sb.Append($"{Tab(2)}\"{fieldN}\":{Convert(headInfo.FieldType, value, aliasBool == "true")},{Environment.NewLine}");
                 }
                 sb.Replace(endStr, Environment.NewLine, sb.Length - endStr.Length, endStr.Length);
                 sb.Append($"{Tab(1)}}},{Environment.NewLine}");
             }
-            sb.Replace(endStr, Environment.NewLine, sb.Length-endStr.Length, endStr.Length);
+            sb.Replace(endStr, Environment.NewLine, sb.Length - endStr.Length, endStr.Length);
         }
         private static string Tab(int num = 1)
         {
@@ -134,7 +139,7 @@ namespace ET.ExcelTool
                 case "int[]":
                 case "int32[]":
                 case "long[]":
-                    //return $"[{GetList(value, isAlias)}]";
+                //return $"[{GetList(value, isAlias)}]";
                 case "string[]":
                     return $"[{GetList(value, isAlias)}]";
                 case "int[][]":
@@ -188,7 +193,7 @@ namespace ET.ExcelTool
                     if (isAlias)
                     {
                         _key = GetRealValueByAlias(_key);
-                        _value = GetRealValueByAlias( _value);
+                        _value = GetRealValueByAlias(_value);
                     }
                     //key和value转过之后就不用再转了alias了
                     result += $"{Tab(3)}\"{_key}\":{Convert(valueType, _value, false)},{Environment.NewLine}";
@@ -213,7 +218,7 @@ namespace ET.ExcelTool
             if (isAlias)
             {
                 string[] values = listValueText.Split(",");
-                for(int i=0; i<values.Length; i++)
+                for (int i = 0; i < values.Length; i++)
                 {
                     string value = values[i].Trim();
                     result += GetRealValueByAlias(value);
