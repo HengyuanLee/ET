@@ -12,14 +12,29 @@ namespace ET.ExcelTool
     {
         #region 导出json
 
+        private static Dictionary<string, string> Alias = new Dictionary<string, string>();
 
         static void ExportExcelJson(ExcelPackage p, string name, Table table, ConfigType configType, string relativeDir)
         {
+            Alias.Clear();
+            foreach (ExcelWorksheet worksheet in p.Workbook.Worksheets)
+            {
+                if (worksheet == null || worksheet.Dimension == null || worksheet.Dimension.End == null) continue;
+                if (worksheet.Name.ToLower() == "#alias")
+                {
+                    for (int row = 1; row <= worksheet.Dimension.End.Row; row++) {
+                        string aliasName = worksheet.Cells[row, 1].Text.Trim();
+                        string realName = worksheet.Cells[row, 2].Text.Trim();
+                        Alias[aliasName] = realName;
+                    }
+                }
+            }
+
             StringBuilder sb = new StringBuilder();
             sb.Append($"{{{Environment.NewLine}");
             foreach (ExcelWorksheet worksheet in p.Workbook.Worksheets)
             {
-                if (worksheet.Name.StartsWith("#"))
+                if (worksheet.Name.StartsWith("#") || worksheet.Name.ToLower() == "#alias")
                 {
                     continue;
                 }
@@ -86,8 +101,11 @@ namespace ET.ExcelTool
                     {
                         fieldN = "_id";
                     }
-
-                    sb.Append($"{Tab(2)}\"{fieldN}\":{Convert(headInfo.FieldType, worksheet.Cells[row, col].Text.Trim())},{Environment.NewLine}");
+                    string value = worksheet.Cells[row, col].Text.Trim();
+                    if (headInfo.FieldConfigs.TryGetValue("alias", out string aliasBool))
+                    {
+                    }
+                    sb.Append($"{Tab(2)}\"{fieldN}\":{Convert(headInfo.FieldType, value, aliasBool=="true")},{Environment.NewLine}");
                 }
                 sb.Replace(endStr, Environment.NewLine, sb.Length - endStr.Length, endStr.Length);
                 sb.Append($"{Tab(1)}}},{Environment.NewLine}");
@@ -104,16 +122,21 @@ namespace ET.ExcelTool
             return result;
         }
 
-        private static string Convert(string type, string value)
+        private static string Convert(string type, string value, bool isAlias)
         {
+            if (isAlias)
+            {
+                value = GetRealValueByAlias(value);
+            }
             switch (type)
             {
                 case "uint[]":
                 case "int[]":
                 case "int32[]":
                 case "long[]":
-                    return $"[{value}]";
+                    //return $"[{GetList(value, isAlias)}]";
                 case "string[]":
+                    return $"[{GetList(value, isAlias)}]";
                 case "int[][]":
                     return $"[{value}]";
                 case "int":
@@ -136,12 +159,12 @@ namespace ET.ExcelTool
                 default:
                     if (type.StartsWith("Dictionary"))
                     {
-                        return GetDictValue(type, value);
+                        return GetDictValue(type, value, isAlias);
                     }
                     throw new Exception($"不支持此类型: {type}");
             }
         }
-        private static string GetDictValue(string type, string value)
+        private static string GetDictValue(string type, string value, bool isAlias)
         {
             string valueType = type.Replace("Dictionary<", string.Empty).Replace(">", string.Empty).Split(",")[1].Trim();
 
@@ -162,7 +185,13 @@ namespace ET.ExcelTool
                 {
                     string _key = kvs[0].Trim();
                     string _value = kvs[1].Trim();
-                    result += $"{Tab(3)}\"{_key}\":{Convert(valueType, _value)},{Environment.NewLine}";
+                    if (isAlias)
+                    {
+                        _key = GetRealValueByAlias(_key);
+                        _value = GetRealValueByAlias( _value);
+                    }
+                    //key和value转过之后就不用再转了alias了
+                    result += $"{Tab(3)}\"{_key}\":{Convert(valueType, _value, false)},{Environment.NewLine}";
                 }
             }
             result = $"{Environment.NewLine}{result.Remove(result.Length - 1 - Environment.NewLine.Length)}";
@@ -170,7 +199,33 @@ namespace ET.ExcelTool
             result = $"{result}{Environment.NewLine}{Tab(2)}}}";
             return result;
         }
-
+        private static string GetRealValueByAlias(string aliasName)
+        {
+            if (Alias.ContainsKey(aliasName))
+            {
+                return Alias[aliasName];
+            }
+            return aliasName;
+        }
+        private static string GetList(string listValueText, bool isAlias)
+        {
+            string result = "";
+            if (isAlias)
+            {
+                string[] values = listValueText.Split(",");
+                for(int i=0; i<values.Length; i++)
+                {
+                    string value = values[i].Trim();
+                    result += GetRealValueByAlias(value);
+                    if (i < values.Length - 1)
+                    {
+                        result += ",";
+                    }
+                }
+                return result;
+            }
+            return listValueText;
+        }
         #endregion
     }
 }

@@ -16,7 +16,7 @@ namespace ET.ExcelTool
         {
             foreach (ExcelWorksheet worksheet in p.Workbook.Worksheets)
             {
-                if (worksheet.Name.StartsWith("#"))
+                if (worksheet.Name.StartsWith("#") || worksheet.Name.Trim().ToLower() == "#alias")
                 {
                     continue;
                 }
